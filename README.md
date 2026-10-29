@@ -1,6 +1,6 @@
 # Random Manga Downloader
 
-A Windows manga downloader that works. Type a name, pick a source, choose settings, click **DOWNLOAD ALL**. 
+A Windows manga downloader that works. Type a name, pick a source, choose settings, **DOWNLOAD**. 
 
 ## How to use
 
