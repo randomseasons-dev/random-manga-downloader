@@ -3,6 +3,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 import { getVersion } from "@tauri-apps/api/app";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+
+const APP_NAME = "Random Manga Downloader";
 import "./App.css";
 
 type Hit = { id: string; title: string; author: string; info: string };
@@ -71,7 +74,12 @@ export default function App() {
   const setOne = (key: string, s: Status) => setStatus((prev) => ({ ...prev, [key]: s }));
 
   useEffect(() => {
-    getVersion().then(setVersion);
+    // "1.1.0" -> "1.1"; shown after the app name in the header and the window title
+    getVersion().then((v) => {
+      const short = v.replace(/\.0$/, "");
+      setVersion(short);
+      getCurrentWindow().setTitle(`${APP_NAME} ${short}`);
+    });
     // no browser context menu (Print etc.); text boxes keep theirs for copy/paste
     const noMenu = (e: MouseEvent) => {
       const t = e.target as HTMLElement;
@@ -136,6 +144,14 @@ export default function App() {
     setResults(null);
     try {
       const r = await invoke<SourceResult[]>("search", { query: q });
+      // sites match ANY word or hidden alternate titles: keep titles that contain every
+      // typed word; if that leaves a source empty, show the site's own list instead
+      const norm = (t: string) => t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ");
+      const words = norm(q).split(" ").filter(Boolean);
+      for (const src of r) {
+        const strict = src.hits.filter((h) => words.every((w) => norm(h.title).includes(w)));
+        if (strict.length > 0) src.hits = strict;
+      }
       // sources with matches first, keep the original order otherwise
       r.sort((a, b) => Number(b.hits.length > 0) - Number(a.hits.length > 0));
       setResults(r);
@@ -270,7 +286,7 @@ export default function App() {
     <div className="app">
       {/* ---------- column 1: search + settings ---------- */}
       <section className="col col1">
-        <h1>Random Manga Downloader{version && ` v${version.replace(/\.0$/, "")}`}</h1>
+        <h1>{APP_NAME}{version && ` ${version}`}</h1>
         <form
           className="search"
           onSubmit={(e) => {

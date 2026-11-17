@@ -40,6 +40,7 @@ The app and installers are written to `src-tauri/target/release/`.
 
 ## Changelog
 
+- **1.1** — search shows only titles containing every typed word (falls back to the site list when none match); version shown after the app name.
 - **1.0** — first release.
 
 made by RandomSeasons
